@@ -1,0 +1,21 @@
+# Hi5-Bot — Synology DS218+ deployment
+#
+# Container Manager (DSM 7.2+) supports docker-compose projects. Place this
+# file in a project folder (e.g. /volume1/docker/hi5bot/) alongside a ./data
+# directory holding config.toml, tokens.json, and (auto-created) state.json.
+#
+# The daemon self-schedules (wakes at 15:30 America/Toronto), so it runs as a
+# long-lived container. `restart: unless-stopped` survives DSM reboots.
+
+services:
+  hi5bot:
+    build: .
+    image: hi5bot:latest
+    container_name: hi5bot
+    restart: unless-stopped
+    environment:
+      TZ: America/Toronto
+      RUST_LOG: info
+    volumes:
+      # Single volume: tokens, state, and config persist across image updates.
+      - ./data:/app/data

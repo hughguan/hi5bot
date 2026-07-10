@@ -1,0 +1,9 @@
+/target
+/data
+.git
+.gitignore
+*.tar
+*.bak
+.DS_Store
+README.md
+config/

@@ -1,0 +1,21 @@
+# Rust build artifacts
+/target
+
+# Runtime data directory (tokens, state, config) - never commit secrets
+/data
+/tokens.json
+/state.json
+/config.toml
+*.bak
+
+# Deployment transfer artifacts
+*.tar
+
+# Editor / OS
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Local agent / IDE config
+.claude/

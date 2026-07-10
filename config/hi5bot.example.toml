@@ -1,0 +1,40 @@
+# Hi5-Bot configuration.
+# Copy to <data_dir>/config.toml (default ./data/config.toml, or $HI5BOT_DATA_DIR/config.toml).
+# On the Synology DS218+, this is the ./data volume mounted into the container.
+
+# ---- Accounts (Questrade account numbers as strings) ----
+resp_account = "12345678"
+tfsa_account = "87654321"
+
+# Questrade symbol IDs for the 5 ETFs + VIX index.
+# Lookup once via v1/symbols/search?q=<TICKER> (IDs differ between practice & prod).
+# VIX is an index quote used by the ExtremePanic signal.
+vix_symbol_id = 0
+
+[symbol_ids]
+IWY = 0
+SPMO = 0
+RSP = 0
+PFF = 0
+VNQ = 0
+
+# ---- Strategy parameters ----
+# Rolling month safety buffer M: Available_Per_Trade = USD_Cash / M. Default 10.
+safety_buffer_m = 10
+
+# Settlement preference hard-lock. The operator MUST set the Questrade account's
+# settlement currency to "Currency of transaction" and mirror that here. Any other
+# value triggers a hard-abort before trading (prevents CAD-credit USD trades).
+settlement_pref = "Currency of Transaction"
+
+# ---- OAuth2 ----
+# Questrade token endpoint (production). Use the practice URL for sandbox testing.
+token_url = "https://login.questrade.com/oauth2/token"
+
+# ---- Runtime ----
+# Daily evaluation time (America/Toronto = EST/EDT). 15:30 = 30 min before US close.
+eval_time = "15:30"
+
+# Webhook URL for hard-abort notifications (USD cash exhausted, currency violation).
+# Leave empty to disable (errors still go to logs).
+notify_webhook = ""
