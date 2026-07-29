@@ -2,9 +2,11 @@
 # Copy to <data_dir>/config.toml (default ./data/config.toml, or $HI5BOT_DATA_DIR/config.toml).
 # On the Synology DS218+, this is the ./data volume mounted into the container.
 
-# ---- Accounts (Questrade account numbers as strings) ----
-resp_account = "12345678"
-tfsa_account = "87654321"
+# ---- Account discovery (replaces hardcoded account numbers) ----
+# The daemon calls Questrade GET v1/accounts at startup and filters by these types.
+# Supported: RESP, TFSA, RRSP, Margin, Cash, LIRA, etc.
+# Default: ["RESP", "TFSA"]
+account_types = ["RESP", "TFSA"]
 
 # Questrade symbol IDs for the 5 ETFs + VIX index.
 # Lookup once via v1/symbols/search?q=<TICKER> (IDs differ between practice & prod).

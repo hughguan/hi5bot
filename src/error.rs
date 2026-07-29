@@ -47,8 +47,17 @@ pub enum Error {
     #[error("state store error: {0}")]
     State(String),
 
+    #[error("database error: {0}")]
+    Db(String),
+
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
+}
+
+impl From<rusqlite::Error> for Error {
+    fn from(e: rusqlite::Error) -> Self {
+        Error::Db(e.to_string())
+    }
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

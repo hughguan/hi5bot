@@ -3,6 +3,12 @@
 //! The daemon resolves a single data directory from `$HI5BOT_DATA_DIR` (default
 //! `./data`) and looks for `config.toml`, `tokens.json`, and `state.json`
 //! underneath it. This lets the Synology container mount exactly one volume.
+//!
+//! ## Account discovery
+//!
+//! Instead of hardcoding account numbers, the daemon calls Questrade
+//! `GET v1/accounts` at startup, filters by `account_types`, and locks in
+//! the discovered set. See [`crate::accounts::discover`].
 
 use crate::error::{Error, Result};
 use serde::Deserialize;
@@ -11,10 +17,11 @@ use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Settings {
-    /// RESP account number (string; Questrade numbers may have leading structure).
-    pub resp_account: String,
-    /// TFSA account number.
-    pub tfsa_account: String,
+    /// Questrade account types to include (case-insensitive).
+    /// Common values: "RESP", "TFSA", "RRSP", "Margin", "Cash", "LIRA".
+    /// Defaults to ["RESP", "TFSA"] if empty.
+    #[serde(default = "default_account_types")]
+    pub account_types: Vec<String>,
     /// VIX index symbol id (for the ExtremePanic signal).
     pub vix_symbol_id: u64,
     /// ETF symbol ids keyed by uppercase ticker.
@@ -38,6 +45,9 @@ pub struct Settings {
     pub notify_webhook: String,
 }
 
+fn default_account_types() -> Vec<String> {
+    vec!["RESP".to_string(), "TFSA".to_string()]
+}
 fn default_m() -> u32 {
     10
 }
@@ -91,11 +101,6 @@ impl Settings {
             .copied()
             .ok_or_else(|| Error::ConfigParse(format!("missing symbol id for {ticker}")))
     }
-
-    /// Both managed account numbers.
-    pub fn accounts(&self) -> [&str; 2] {
-        [self.resp_account.as_str(), self.tfsa_account.as_str()]
-    }
 }
 
 // ---- data-directory resolution --------------------------------------------
@@ -125,8 +130,7 @@ mod tests {
 
     fn sample_toml() -> &'static str {
         r#"
-resp_account = "111"
-tfsa_account = "222"
+account_types = ["RESP", "TFSA"]
 vix_symbol_id = 999
 safety_buffer_m = 10
 settlement_pref = "Currency of Transaction"
@@ -149,16 +153,24 @@ VNQ = 5
         let path = dir.path().join("config.toml");
         std::fs::write(&path, sample_toml()).unwrap();
         let s = Settings::load_from(&path).expect("valid config");
-        assert_eq!(s.resp_account, "111");
+        assert_eq!(s.account_types, vec!["RESP", "TFSA"]);
         assert_eq!(s.symbol_id(crate::types::Ticker::Rsp).unwrap(), 3);
         assert_eq!(s.safety_buffer_m, 10);
     }
 
     #[test]
+    fn defaults_account_types_when_missing() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("config.toml");
+        std::fs::write(&path, sample_toml().replace("account_types", "#account_types")).unwrap();
+        let s = Settings::load_from(&path).expect("valid config");
+        assert_eq!(s.account_types, vec!["RESP", "TFSA"]);
+    }
+
+    #[test]
     fn rejects_missing_symbol_id() {
         let toml = r#"
-resp_account = "1"
-tfsa_account = "2"
+account_types = ["RESP"]
 vix_symbol_id = 0
 [symbol_ids]
 IWY = 1

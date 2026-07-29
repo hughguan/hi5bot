@@ -27,6 +27,20 @@ toml = "0.8"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
+# Web server (Axum) + SQLite
+axum = { version = "0.8", features = ["macros"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors", "fs", "trace"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
+
+# HTML templating for the built-in dashboard (optional: server-side rendered fallback)
+# If prefer pure API + separate Next.js frontend, these can be removed.
+scraper = { version = "0.19", optional = true }
+
+[features]
+default = ["web-scraper"]
+web-scraper = ["scraper"]
+
 [dev-dependencies]
 tempfile = "3"
 wiremock = "0.6"

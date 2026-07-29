@@ -115,7 +115,7 @@ pub fn rebalance_orders(state: &PortfolioState) -> Vec<RebalanceOrder> {
     sells.into_iter().chain(buys).collect()
 }
 
-/// Run one evaluation tick across all configured accounts.
+/// Run one evaluation tick across all discovered accounts.
 ///
 /// On a hard-abort condition (USD cash exhausted, currency hard-lock violated)
 /// the webhook is notified and an [`Error`] is returned so the caller can exit.
@@ -123,9 +123,11 @@ pub async fn run_tick(
     settings: &Settings,
     tokens: &TokenStore,
     state_store: &MonthlyStateStore,
+    db: Option<&crate::db::Database>,
     http: &reqwest::Client,
     now: NaiveDateTime,
     dry_run: bool,
+    accounts: &[crate::accounts::DiscoveredAccount],
 ) -> Result<Vec<TickSummary>> {
     // 1. Ensure a valid access token (refreshes if expired).
     tokens.ensure_valid(http, &settings.token_url, now).await?;
@@ -155,11 +157,19 @@ pub async fn run_tick(
     };
     let market = compute_market_state_value(&candles, vix, today);
 
+    // 2b. Fetch market sentiment and classify extreme zone (Fix C3 & C4)
+    if let Some(database) = db {
+        if let Ok(mut sentiment) = crate::fetcher::fetch_market_sentiment(http, today).await {
+            sentiment.vix = vix.and_then(|v| v.to_f64());
+            let _ = database.insert_market_signal(&sentiment);
+        }
+    }
+
     // 3. Evaluate per account.
     let mut summaries = Vec::new();
-    for account in settings.accounts() {
+    for acct in accounts {
         let summary =
-            evaluate_account(&qt, settings, state_store, account, &market, today, dry_run).await?;
+            evaluate_account(&qt, settings, state_store, db, &acct.number, &market, today, dry_run).await?;
         summaries.push(summary);
     }
     Ok(summaries)
@@ -169,6 +179,7 @@ async fn evaluate_account(
     qt: &QuestradeClient,
     settings: &Settings,
     state_store: &MonthlyStateStore,
+    db: Option<&crate::db::Database>,
     account: &str,
     market: &crate::strategy::MarketState,
     today: NaiveDate,
@@ -230,7 +241,20 @@ async fn evaluate_account(
                         qt.place_sell_limit(account, sym_id, o.shares.0, o.limit_price.0)
                             .await?;
                         orders_placed += 1;
-                        // Best-effort: proceeds are T+1; we do not assume same-day cash.
+                        if let Some(database) = db {
+                            let _ = database.log_order(&crate::db::OrderLogEntry {
+                                id: 0,
+                                account: account.to_string(),
+                                ticker: o.ticker.as_str().to_string(),
+                                side: "SELL".to_string(),
+                                shares: o.shares.0,
+                                limit_price: o.limit_price.0.to_f64().unwrap_or(0.0),
+                                est_cost: None,
+                                signal: Some(format!("{:?}", sig)),
+                                placed_at: None,
+                                status: Some("submitted".to_string()),
+                            });
+                        }
                     }
                     OrderSide::Buy => {
                         let cost = o.limit_price * o.shares;
@@ -247,6 +271,20 @@ async fn evaluate_account(
                             .await?;
                         cash_avail -= cost;
                         orders_placed += 1;
+                        if let Some(database) = db {
+                            let _ = database.log_order(&crate::db::OrderLogEntry {
+                                id: 0,
+                                account: account.to_string(),
+                                ticker: o.ticker.as_str().to_string(),
+                                side: "BUY".to_string(),
+                                shares: o.shares.0,
+                                limit_price: o.limit_price.0.to_f64().unwrap_or(0.0),
+                                est_cost: Some(cost.0.to_f64().unwrap_or(0.0)),
+                                signal: Some(format!("{:?}", sig)),
+                                placed_at: None,
+                                status: Some("submitted".to_string()),
+                            });
+                        }
                     }
                 }
             }
@@ -260,7 +298,28 @@ async fn evaluate_account(
                 notify::notify(&settings.notify_webhook, &reason).await;
                 return Err(Error::UsdCashExhausted);
             }
-            let budget = available_per_trade(cash, settings.safety_buffer_m);
+            let base_budget = available_per_trade(cash, settings.safety_buffer_m);
+            let zone = if let Some(database) = db {
+                database.latest_market_signal()
+                    .ok()
+                    .flatten()
+                    .and_then(|s| s.extreme_zone)
+                    .and_then(|z| {
+                        serde_json::from_str::<crate::radar::ExtremeZone>(&format!("\"{z}\""))
+                            .ok()
+                            .or_else(|| match z.as_str() {
+                                "NORMAL" => Some(crate::radar::ExtremeZone::Normal),
+                                "CAUTION" => Some(crate::radar::ExtremeZone::Caution),
+                                "PANIC" => Some(crate::radar::ExtremeZone::Panic),
+                                "EXTREME_BUY_NOW" | "EXTREME_PANIC" => Some(crate::radar::ExtremeZone::ExtremePanic),
+                                _ => None,
+                            })
+                    })
+                    .unwrap_or(crate::radar::ExtremeZone::Normal)
+            } else {
+                crate::radar::ExtremeZone::Normal
+            };
+            let budget = crate::types::UsdCash(crate::radar::hi5e_dynamic_budget(base_budget.0, zone));
             let alloc = fill_the_gap(&state, budget)?;
             for o in &alloc {
                 let sym_id = settings.symbol_id(o.ticker)?;
@@ -278,6 +337,20 @@ async fn evaluate_account(
                 qt.place_buy_limit(account, sym_id, o.shares.0, o.limit_price.0)
                     .await?;
                 orders_placed += 1;
+                if let Some(database) = db {
+                    let _ = database.log_order(&crate::db::OrderLogEntry {
+                        id: 0,
+                        account: account.to_string(),
+                        ticker: o.ticker.as_str().to_string(),
+                        side: "BUY".to_string(),
+                        shares: o.shares.0,
+                        limit_price: o.limit_price.0.to_f64().unwrap_or(0.0),
+                        est_cost: Some(o.est_cost.0.to_f64().unwrap_or(0.0)),
+                        signal: Some(format!("{:?}", sig)),
+                        placed_at: None,
+                        status: Some("submitted".to_string()),
+                    });
+                }
             }
             if !alloc.is_empty() && !dry_run {
                 state_store.record_trade(account, today.year(), today.month())?;
