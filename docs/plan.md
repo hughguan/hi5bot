@@ -17,10 +17,10 @@ gantt
     section Phase 2: Live Ingestion & Account Discovery
     AAII/NAAIM Web Scraper        :done, m4, 2026-07-29, 2026-07-30
     Account Discovery (Questrade) :done, m4b, 2026-07-31, 2026-07-31
-    Next.js / Tremor Dashboard    :active, m5, 2026-08-01, 2026-08-15
+    Next.js / Recharts Dashboard  :done, m5, 2026-08-01, 2026-08-15
     section Phase 3: Notifications & Ops
-    Telegram / Email Alerts       :m6, 2026-08-15, 2026-08-20
-    Cloudflare Tunnel & NAS Ops   :m7, 2026-08-20, 2026-08-25
+    Telegram / Webhook Alerts     :done, m6, 2026-08-15, 2026-08-20
+    Cloudflare Tunnel & NAS Ops   :done, m7, 2026-08-20, 2026-08-25
 ```
 
 ---
