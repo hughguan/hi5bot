@@ -16,15 +16,17 @@ RUN npm ci
 COPY web ./
 RUN npm run build
 
-# ---- Runtime stage: minimal, non-root, with CA roots + tzdata ----
+# ---- Runtime stage: minimal, non-root, with CA roots + tzdata + nodejs ----
 FROM alpine:3
-RUN apk add --no-cache ca-certificates tzdata \
+RUN apk add --no-cache ca-certificates tzdata nodejs \
  && addgroup -S app && adduser -S app -G app \
  && mkdir -p /app/data && chown -R app:app /app
 WORKDIR /app
 COPY --from=rust-build /hi5bot /app/hi5bot
 COPY --from=web-build /app/.next/standalone /app/web-standalone
 COPY --from=web-build /app/.next/static /app/web-standalone/.next/static
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh && chown -R app:app /app
 
 # Run as non-root; the data dir is the single mounted volume.
 USER app
@@ -32,5 +34,5 @@ ENV HI5BOT_DATA_DIR=/app/data \
     TZ=America/Toronto \
     RUST_LOG=info
 
-# Long-running daemon; it self-schedules the 15:30 America/Toronto wake.
-ENTRYPOINT ["/app/hi5bot"]
+# Entrypoint wrapper launches Next.js node server on port 3000 and execs hi5bot daemon.
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
