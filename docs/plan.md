@@ -60,6 +60,24 @@ gantt
 * **Unit M5.5**: Built Real-time Audit & Execution Order Log table (`OrderLogTable.tsx`).
 * **Unit M5.6**: Added graceful REST API client (`api.ts`) connecting to Axum backend (Port 8080) with fallback UI support.
 
-### Milestone 6: Multi-channel Alerting & Cloudflare Tunnel [PARTIALLY COMPLETE 🟡]
+### Milestone 6: Multi-channel Alerting & Cloudflare Tunnel [COMPLETED ✅]
 * **Unit M6.1**: Extended `src/notify.rs` and `src/config.rs` with Telegram Bot (`telegram_bot_token`, `telegram_chat_id`) and Webhook alerts for trade executions, extreme radar escalations, and hard-abort circuit breakers.
-* **Unit M6.2**: Add `cloudflared` container service to `docker-compose.yml` for secure zero-trust remote access.
+* **Unit M6.2**: Configured `cloudflared` Zero-Trust container service in `docker-compose.yml` and multi-stage `Dockerfile` (Rust musl binary + Next.js web standalone bundle) for zero-trust NAS deployment.
+
+---
+
+## 3. Project Roadmap Completion Summary
+
+```
+Total Roadmap Milestones: 6 / 6 (100% Completed)
+├── ✅ Milestone 1: Core Daemon & Financial Storage Layer
+├── ✅ Milestone 2: Market Extreme Radar & Backtest Laboratory
+├── ✅ Milestone 3: Axum REST API & Multi-Mode CLI
+├── ✅ Milestone 4: Automated Data Ingestion & Account Discovery
+├── ✅ Milestone 5: Web Frontend Dashboard (Next.js + Recharts)
+└── ✅ Milestone 6: Multi-channel Alerting & Cloudflare Tunnel Ops
+
+Test Suite Verification:
+- 62/62 unit & integration tests passing
+- Frontend TypeScript build clean (0 errors)
+```

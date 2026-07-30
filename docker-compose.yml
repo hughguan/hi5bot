@@ -25,3 +25,13 @@ services:
     volumes:
       # Single volume: tokens, state, db, and config persist across image updates.
       - ./data:/app/data
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: hi5bot-cloudflared
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:-}
+    depends_on:
+      - hi5bot
