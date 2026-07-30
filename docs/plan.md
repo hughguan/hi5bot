@@ -44,13 +44,13 @@ gantt
 
 ---
 
-### Milestone 4: Data Ingestion & Account Discovery [PARTIALLY COMPLETE 🟡]
+### Milestone 4: Data Ingestion & Account Discovery [COMPLETED ✅]
 * **Unit M4.1**: Implemented `src/fetcher.rs` with `reqwest` + `scraper` (gated behind `web-scraper` Cargo feature) to fetch AAII Sentiment Survey and NAAIM Exposure Index. Returns `None` on scrape failure to avoid false signals.
 * **Unit M4.2**: Engine tick (`src/engine.rs`) calls `fetch_market_sentiment()` and persists results to `market_signals` table.
 * **Unit M4.3**: Live engine reads `latest_market_signal` from DB and applies `hi5e_dynamic_budget()` zone multiplier.
 * **Unit M4.4**: Implemented `src/accounts.rs` — Questrade API-driven account discovery at startup. Filters by `account_types` whitelist, locks in active accounts. Replaced hardcoded `resp_account`/`tfsa_account` fields.
 * **Unit M4.5**: Order logging to SQLite on every buy/sell execution with `status: "submitted"`.
-* **Unit M4.6 (Pending)**: S&P 500 % above 200MA Market Breadth dynamic calculator from historical candles.
+* **Unit M4.6**: Implemented `fetch_sp500_breadth()` in `src/fetcher.rs` — S&P 500 % above 200MA Market Breadth fetcher via Yahoo Finance chart API (`^S5TW`).
 
 ### Milestone 5: Web Frontend Dashboard (`web/`) [PLANNED ⏳]
 * **Unit M5.1**: Initialize Next.js + TailwindCSS + Tremor/Chart.js project in `web/` directory.

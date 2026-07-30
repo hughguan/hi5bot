@@ -25,7 +25,7 @@ pub struct SentimentData {
 pub async fn fetch_market_sentiment(client: &Client, today: NaiveDate) -> Result<MarketSignalRecord> {
     let (aaii_bulls, aaii_bears) = fetch_aaii_sentiment(client).await.unwrap_or((None, None));
     let naaim_exposure = fetch_naaim_exposure(client).await.ok().flatten();
-    let sp500_pct_above_200ma = None;
+    let sp500_pct_above_200ma = fetch_sp500_breadth(client).await.ok().flatten();
 
     let snapshot = crate::radar::classify_zone(
         aaii_bulls,
@@ -46,6 +46,33 @@ pub async fn fetch_market_sentiment(client: &Client, today: NaiveDate) -> Result
         vix: None,
         extreme_zone: Some(snapshot.zone.label().to_string()),
     })
+}
+
+/// Fetch S&P 500 % of stocks above 200-day moving average (Market Breadth).
+/// Scrapes from Barchart / Yahoo Finance proxy for $S5TW (% of S&P 500 above 200MA).
+async fn fetch_sp500_breadth(client: &Client) -> Result<Option<f64>> {
+    let url = "https://query1.finance.yahoo.com/v8/finance/chart/%5ES5TW?interval=1d&range=1d";
+    let resp = client
+        .get(url)
+        .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+        .send()
+        .await
+        .map_err(|e| Error::RefreshHttp(format!("breadth fetch error: {e}")))?;
+
+    if !resp.status().is_success() {
+        return Ok(None);
+    }
+
+    let json: serde_json::Value = resp
+        .json()
+        .await
+        .map_err(|e| Error::RefreshHttp(format!("breadth json error: {e}")))?;
+
+    let close = json["chart"]["result"][0]["indicators"]["quote"][0]["close"][0]
+        .as_f64()
+        .or_else(|| json["chart"]["result"][0]["meta"]["regularMarketPrice"].as_f64());
+
+    Ok(close)
 }
 
 async fn fetch_aaii_sentiment(client: &Client) -> Result<(Option<f64>, Option<f64>)> {
