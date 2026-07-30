@@ -69,16 +69,31 @@ export default function Home() {
       </header>
 
       {/* Grid Row 1: Radar & Allocation */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <RadarWidget radar={radar} />
-        <AllocationChart overview={overview} />
-      </div>
+      {loading ? (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="glass-panel rounded-2xl p-6 h-72 animate-pulse bg-slate-900/40" />
+          <div className="glass-panel rounded-2xl p-6 h-72 animate-pulse bg-slate-900/40" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <RadarWidget radar={radar} />
+          <AllocationChart overview={overview} />
+        </div>
+      )}
 
       {/* Grid Row 2: Backtest Laboratory */}
-      <BacktestChart backtest={backtest} />
+      {loading ? (
+        <div className="glass-panel rounded-2xl p-6 h-80 animate-pulse bg-slate-900/40" />
+      ) : (
+        <BacktestChart backtest={backtest} />
+      )}
 
       {/* Grid Row 3: Audit Order Logs */}
-      <OrderLogTable orders={orders?.orders || []} />
+      {loading ? (
+        <div className="glass-panel rounded-2xl p-6 h-64 animate-pulse bg-slate-900/40" />
+      ) : (
+        <OrderLogTable orders={orders?.orders || []} />
+      )}
 
       {/* Footer */}
       <footer className="text-center text-xs text-slate-500 pt-6 border-t border-slate-800/60">

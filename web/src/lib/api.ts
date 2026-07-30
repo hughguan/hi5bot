@@ -11,11 +11,11 @@ export async function fetchOverview(): Promise<OverviewResponse> {
     console.warn('Backend unavailable, using fallback mock overview:', e);
     return {
       positions: [
-        { ticker: 'IWY', shares: 45, price: 210.5, value: 9472.5, weight: 0.198, target_weight: 0.2 },
-        { ticker: 'SPMO', shares: 82, price: 115.2, value: 9446.4, weight: 0.197, target_weight: 0.2 },
-        { ticker: 'RSP', shares: 58, price: 165.0, value: 9570.0, weight: 0.200, target_weight: 0.2 },
-        { ticker: 'PFF', shares: 310, price: 30.5, value: 9455.0, weight: 0.197, target_weight: 0.2 },
-        { ticker: 'VNQ', shares: 115, price: 82.0, value: 9430.0, weight: 0.197, target_weight: 0.2 },
+        { ticker: 'IWY', shares: 45, price: 210.5, market_value: 9472.5, current_weight_pct: 19.8, target_weight_pct: 20.0 },
+        { ticker: 'SPMO', shares: 82, price: 115.2, market_value: 9446.4, current_weight_pct: 19.7, target_weight_pct: 20.0 },
+        { ticker: 'RSP', shares: 58, price: 165.0, market_value: 9570.0, current_weight_pct: 20.0, target_weight_pct: 20.0 },
+        { ticker: 'PFF', shares: 310, price: 30.5, market_value: 9455.0, current_weight_pct: 19.7, target_weight_pct: 20.0 },
+        { ticker: 'VNQ', shares: 115, price: 82.0, market_value: 9430.0, current_weight_pct: 19.7, target_weight_pct: 20.0 },
       ],
       cash_usd: 520.0,
       sgov_pool: 0.0,
@@ -57,7 +57,7 @@ export async function fetchOrders(): Promise<OrderLogResponse> {
       orders: [
         {
           id: 101,
-          timestamp: new Date().toISOString(),
+          placed_at: new Date().toISOString(),
           account: 'RESP-789213',
           ticker: 'VNQ',
           side: 'BUY',
@@ -69,7 +69,7 @@ export async function fetchOrders(): Promise<OrderLogResponse> {
         },
         {
           id: 100,
-          timestamp: new Date(Date.now() - 86400000 * 5).toISOString(),
+          placed_at: new Date(Date.now() - 86400000 * 5).toISOString(),
           account: 'TFSA-441209',
           ticker: 'PFF',
           side: 'BUY',
@@ -81,7 +81,7 @@ export async function fetchOrders(): Promise<OrderLogResponse> {
         },
         {
           id: 99,
-          timestamp: new Date(Date.now() - 86400000 * 12).toISOString(),
+          placed_at: new Date(Date.now() - 86400000 * 12).toISOString(),
           account: 'RESP-789213',
           ticker: 'SPMO',
           side: 'BUY',

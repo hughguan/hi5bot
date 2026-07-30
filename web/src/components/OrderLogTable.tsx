@@ -34,11 +34,14 @@ export default function OrderLogTable({ orders }: OrderLogTableProps) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60">
-            {orders.map((o) => (
-              <tr key={o.id} className="hover:bg-slate-800/40 transition-colors">
-                <td className="py-3 text-slate-300 font-mono">
-                  {new Date(o.timestamp).toLocaleDateString()} {new Date(o.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </td>
+            {orders.map((o) => {
+              const timeStr = o.placed_at ?? o.timestamp ?? '';
+              const dateObj = timeStr ? new Date(timeStr) : new Date();
+              return (
+                <tr key={o.id} className="hover:bg-slate-800/40 transition-colors">
+                  <td className="py-3 text-slate-300 font-mono">
+                    {dateObj.toLocaleDateString()} {dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </td>
                 <td className="py-3 text-slate-300 font-semibold">{o.account}</td>
                 <td className="py-3 font-bold text-blue-400">{o.ticker}</td>
                 <td className="py-3">
@@ -56,8 +59,9 @@ export default function OrderLogTable({ orders }: OrderLogTableProps) {
                     {o.status}
                   </span>
                 </td>
-              </tr>
-            ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

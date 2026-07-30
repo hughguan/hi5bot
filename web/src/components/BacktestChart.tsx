@@ -23,14 +23,14 @@ export default function BacktestChart({ backtest }: BacktestChartProps) {
         <div className="flex items-center gap-6">
           <div className="text-right">
             <div className="text-xs text-slate-400">Hi5 Benchmark</div>
-            <div className="text-sm font-semibold text-blue-400">
-              CAGR {(hi5.cagr * 100).toFixed(1)}% | MaxDD {(hi5.max_dd * 100).toFixed(1)}%
+            <div className="text-xs font-semibold text-blue-400">
+              CAGR {(hi5.cagr * 100).toFixed(1)}% | MaxDD {(hi5.max_dd * 100).toFixed(1)}% | Sharpe {hi5.sharpe.toFixed(2)}
             </div>
           </div>
           <div className="text-right">
             <div className="text-xs text-slate-400">Hi5e Enhanced</div>
-            <div className="text-sm font-bold text-emerald-400">
-              CAGR {(hi5e.cagr * 100).toFixed(1)}% | MaxDD {(hi5e.max_dd * 100).toFixed(1)}%
+            <div className="text-xs font-bold text-emerald-400">
+              CAGR {(hi5e.cagr * 100).toFixed(1)}% | MaxDD {(hi5e.max_dd * 100).toFixed(1)}% | Sharpe {hi5e.sharpe.toFixed(2)}
             </div>
           </div>
         </div>

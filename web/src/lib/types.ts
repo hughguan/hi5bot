@@ -1,11 +1,13 @@
 export interface OverviewResponse {
   positions: {
     ticker: string;
-    shares: number;
-    price: number;
-    value: number;
-    weight: number;
-    target_weight: number;
+    shares?: number;
+    price?: number;
+    market_value?: number;
+    value?: number;
+    current_weight_pct?: number;
+    target_weight_pct?: number;
+    weight?: number;
   }[];
   cash_usd: number;
   sgov_pool: number;
@@ -31,7 +33,8 @@ export interface RadarHistoryResponse {
 
 export interface OrderLogItem {
   id: number;
-  timestamp: string;
+  placed_at?: string;
+  timestamp?: string;
   account: string;
   ticker: string;
   side: 'BUY' | 'SELL';
