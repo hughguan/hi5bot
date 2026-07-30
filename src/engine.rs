@@ -213,7 +213,13 @@ async fn evaluate_account(
                 "account {account}: settlement pref is '{}' (must be Currency of Transaction)",
                 settings.settlement_pref
             );
-            notify::notify(&settings.notify_webhook, &reason).await;
+            notify::notify_hard_abort(
+                &settings.notify_webhook,
+                settings.telegram_bot_token.as_deref(),
+                settings.telegram_chat_id.as_deref(),
+                &reason,
+            )
+            .await;
             return Err(Error::SettlementNotCurrencyOfTransaction(
                 settings.settlement_pref.clone(),
             ));
@@ -295,7 +301,13 @@ async fn evaluate_account(
                     "account {account}: USD cash <= 0 before {:?} buy; hard-abort",
                     sig
                 );
-                notify::notify(&settings.notify_webhook, &reason).await;
+                notify::notify_hard_abort(
+                    &settings.notify_webhook,
+                    settings.telegram_bot_token.as_deref(),
+                    settings.telegram_chat_id.as_deref(),
+                    &reason,
+                )
+                .await;
                 return Err(Error::UsdCashExhausted);
             }
             let base_budget = available_per_trade(cash, settings.safety_buffer_m);

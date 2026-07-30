@@ -43,6 +43,12 @@ pub struct Settings {
     /// Optional webhook for hard-abort notifications.
     #[serde(default)]
     pub notify_webhook: String,
+    /// Optional Telegram bot token for alerts.
+    #[serde(default)]
+    pub telegram_bot_token: Option<String>,
+    /// Optional Telegram chat ID for alerts.
+    #[serde(default)]
+    pub telegram_chat_id: Option<String>,
 }
 
 fn default_account_types() -> Vec<String> {

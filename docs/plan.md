@@ -60,6 +60,6 @@ gantt
 * **Unit M5.5**: Built Real-time Audit & Execution Order Log table (`OrderLogTable.tsx`).
 * **Unit M5.6**: Added graceful REST API client (`api.ts`) connecting to Axum backend (Port 8080) with fallback UI support.
 
-### Milestone 6: Multi-channel Alerting & Cloudflare Tunnel [PLANNED ⏳]
-* **Unit M6.1**: Implement Telegram Bot / Webhook alerts in `src/notify.rs` for order execution notifications and circuit breaker trips.
+### Milestone 6: Multi-channel Alerting & Cloudflare Tunnel [PARTIALLY COMPLETE 🟡]
+* **Unit M6.1**: Extended `src/notify.rs` and `src/config.rs` with Telegram Bot (`telegram_bot_token`, `telegram_chat_id`) and Webhook alerts for trade executions, extreme radar escalations, and hard-abort circuit breakers.
 * **Unit M6.2**: Add `cloudflared` container service to `docker-compose.yml` for secure zero-trust remote access.
