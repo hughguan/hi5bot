@@ -52,11 +52,13 @@ gantt
 * **Unit M4.5**: Order logging to SQLite on every buy/sell execution with `status: "submitted"`.
 * **Unit M4.6**: Implemented `fetch_sp500_breadth()` in `src/fetcher.rs` — S&P 500 % above 200MA Market Breadth fetcher via Yahoo Finance chart API (`^S5TW`).
 
-### Milestone 5: Web Frontend Dashboard (`web/`) [PLANNED ⏳]
-* **Unit M5.1**: Initialize Next.js + TailwindCSS + Tremor/Chart.js project in `web/` directory.
-* **Unit M5.2**: Build Real-time Radar Gauge and Extreme Zone indicator widget.
-* **Unit M5.3**: Build Portfolio Target vs Actual allocation donut charts.
-* **Unit M5.4**: Build Hi5 vs Hi5e Backtest Comparison interactive graph.
+### Milestone 5: Web Frontend Dashboard (`web/`) [COMPLETED ✅]
+* **Unit M5.1**: Initialized Next.js 16 + TypeScript + TailwindCSS + Recharts project in `web/` directory.
+* **Unit M5.2**: Built Real-time Market Extreme Radar Gauge & 4-Pillar Status Widget (`RadarWidget.tsx`).
+* **Unit M5.3**: Built Portfolio Target vs Actual allocation donut charts & position table (`AllocationChart.tsx`).
+* **Unit M5.4**: Built Hi5 vs Hi5e Backtest Comparison interactive area chart (`BacktestChart.tsx`).
+* **Unit M5.5**: Built Real-time Audit & Execution Order Log table (`OrderLogTable.tsx`).
+* **Unit M5.6**: Added graceful REST API client (`api.ts`) connecting to Axum backend (Port 8080) with fallback UI support.
 
 ### Milestone 6: Multi-channel Alerting & Cloudflare Tunnel [PLANNED ⏳]
 * **Unit M6.1**: Implement Telegram Bot / Webhook alerts in `src/notify.rs` for order execution notifications and circuit breaker trips.
