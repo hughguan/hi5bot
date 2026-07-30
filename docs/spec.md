@@ -30,21 +30,26 @@ The Market Radar evaluates market sentiment and breadth indicators according to 
 * **`Panic`**: 2 Pillars triggered, or 1 pillar + VIX ≥ 35. Dynamic budget multiplier = $2.0\times$.
 * **`ExtremePanic`**: 3 Pillars triggered + VIX ≥ 35 + RSP daily return ≤ -3%. Dynamic budget multiplier = $3.0\times$.
 
+> ⚠️ **Architecture Note (Live vs Backtest SGOV Boundary)**:
+> SGOV cash reservoir tracking (`sgov_pool`) is **exclusive to the backtest simulator**, where unspent monthly contributions are accumulated in SGOV. The **live execution engine** does NOT hold or manage an SGOV pool — it applies the dynamic budget multiplier ($0.5\times \sim 3.0\times$) directly to the account's per-tick USD cash buffer budget (`cash / M`).
+
 ### 1.3 Market Sentiment Fetcher (`src/fetcher.rs`)
 Fetches AAII sentiment and NAAIM exposure via web scraping (gated behind `web-scraper` Cargo feature). On scraper failure, returns `None` for affected pillars — the radar treats missing data as non-extreme (no false signalling).
 
 ### 1.4 Backtest Simulator (`src/backtest.rs`)
-Simulates portfolio execution over daily historical candles for the 5 target ETFs (`IWY`, `SPMO`, `RSP`, `PFF`, `VNQ`) plus cash proxy SGOV.
+Simulates portfolio execution over daily historical candles for the 5 target ETFs (`IWY`, `SPMO`, `RSP`, `PFF`, `VNQ`) plus an **in-memory cash-proxy SGOV pool** (backtest-only; see Architecture Note above).
+
+> Live engine does **not** maintain SGOV. Live Hi5e only multiplies the per-tick buffer budget `cash / M` by the zone factor ($0.5\times \sim 3.0\times$).
 
 * **Hi5 Base Model**:
   * Fixed monthly DCA deposit of $\$1,000$ on the 3rd Friday of each month.
   * Fill-the-Gap allocation with full contribution budget (not buffer-pool `cash/M`).
   * Uniform short-board allocation across 5 ETFs.
   * Hard annual rebalance on the last trading day of August.
-* **Hi5e Dynamic Model**:
-  * In `Normal` / `Caution` zone: Deploy $\$500$ ($0.5\times$), route remaining $\$500$ to SGOV cash reservoir.
-  * In `Panic` zone: Deploy $\$2,000$ ($2.0\times$), pulling from SGOV reservoir.
-  * In `ExtremePanic` zone: Deploy $\$3,000$ ($3.0\times$), pulling from SGOV reservoir.
+* **Hi5e Dynamic Model (backtest semantics)**:
+  * In `Normal` / `Caution` zone: Deploy $\$500$ ($0.5\times$), route remaining $\$500$ to simulated SGOV reservoir.
+  * In `Panic` zone: Deploy $\$2,000$ ($2.0\times$), pulling from simulated SGOV reservoir.
+  * In `ExtremePanic` zone: Deploy $\$3,000$ ($3.0\times$), pulling from simulated SGOV reservoir.
   * In `ExtremePanic` zone during August: Delay annual rebalance by 15 trading days to avoid liquidating depressed positions.
 * **Metrics Calculated** (computed from NAV series, not daily returns):
   $$\text{CAGR} = \left(\frac{\text{NAV}_{\text{end}}}{\text{Contributions}}\right)^{\frac{1}{\text{Years}}} - 1$$
@@ -55,7 +60,7 @@ Simulates portfolio execution over daily historical candles for the 5 target ETF
 
 | Method | Endpoint | Description | Query / Body | Response Schema |
 | :--- | :--- | :--- | :--- | :--- |
-| `GET` | `/api/overview` | Portfolio overview & balance | None | `{ positions, cash_usd, sgov_pool, total_value, extreme_zone }` |
+| `GET` | `/api/overview` | **Estimated** portfolio shell (from recent `order_log` until live position cache). Not full Questrade marks. | None | `{ positions (estimated shares/price/value; weights often placeholder 20%), cash_usd: 0.0, sgov_pool: 0.0, total_value, extreme_zone }` |
 | `GET` | `/api/radar` | Current Market Radar status | None | `{ date, zone, pillars, vix, extreme_pillar_count }` |
 | `GET` | `/api/radar/history` | Historical radar logs | `?start=YYYY-MM-DD&end=YYYY-MM-DD` | `{ count, snapshots[] }` |
 | `POST` | `/api/backtest` | Trigger strategy backtest | `{ start_date, end_date, monthly_contribution?, safety_buffer_m?, data: [BacktestDay] }` | `{ request, hi5: { cagr, max_dd, sharpe, nav }, hi5e: {...}, nav_series }` |

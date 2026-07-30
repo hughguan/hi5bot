@@ -1,6 +1,6 @@
 # System Architecture Document (arch.md)
 
-> **Last updated**: 2026-07-31 — synced after account discovery refactor.
+> **Last updated**: 2026-07-31 — account discovery + live vs backtest Hi5e boundary documented.
 
 ## 1. System Context & Overview
 
@@ -46,12 +46,12 @@ graph TD
 * **`src/accounts.rs`**: Questrade API-driven account discovery. Calls `GET v1/accounts`, filters by `account_types` whitelist, and locks in active accounts.
 * **`src/db.rs`**: Thread-safe SQLite abstraction layer built on `rusqlite` with WAL mode. Manages tables: `market_signals`, `order_log`, `backtest_cache`.
 * **`src/fetcher.rs`**: Market sentiment data fetcher. Scrapes AAII sentiment survey and NAAIM exposure index (gated behind `web-scraper` feature). Falls back to `None` on failure.
-* **`src/radar.rs`**: Market Extreme Zone Radar classification engine evaluating 3 pillars to compute `Zone` (`Normal`, `Caution`, `Panic`, `ExtremePanic`) and dynamic budget multipliers.
-* **`src/backtest.rs`**: Historical simulator computing NAV, CAGR, Max Drawdown, and Sharpe Ratio for Hi5 vs Hi5e strategies.
+* **`src/radar.rs`**: Market Extreme Zone Radar classification engine evaluating 3 pillars to compute `Zone` (`Normal`, `Caution`, `Panic`, `ExtremePanic`) and dynamic budget multipliers ($0.5\times \sim 3.0\times$).
+* **`src/backtest.rs`**: Historical simulator computing NAV, CAGR, Max Drawdown, and Sharpe Ratio for Hi5 vs Hi5e strategies. Manages an in-memory `sgov_pool` cash reservoir for unspent monthly contributions (note: `sgov_pool` is backtest-only; the live engine applies the dynamic multiplier directly to the USD cash buffer budget `cash / M`).
 * **`src/web.rs`**: Axum HTTP API routing server with permissive CORS and JSON handlers for 8 primary endpoints.
 * **`src/strategy.rs`**: 5-signal state machine implementation for signal priority, gating, and Fill-the-Gap calculations.
 * **`src/buffer_pool.rs`**: Cash pool management enforcing integer share flooring and invariant checks.
-* **`src/engine.rs`**: Single evaluation tick orchestration — auth → market data → signal → allocate → safety → order.
+* **`src/engine.rs`**: Single evaluation tick orchestration — auth → market data → signal → allocate → safety → order. Live Hi5e applies `hi5e_dynamic_budget` to `available_per_trade(cash, M)` only (no SGOV ledger).
 * **`src/auth.rs`**: Questrade OAuth2 token refresh & atomic persistence layer.
 * **`src/error.rs`**: Centralized system error enum implementing `From<rusqlite::Error>`.
 * **`src/calendar.rs`**: Trading calendar helpers (third Friday, last trading day of August, US holidays).
@@ -157,7 +157,29 @@ config.toml (account_types=["RESP","TFSA"])
           → lock in discovered accounts for trading
 ```
 
-### 4.3 Command Execution Modes
+### 4.3 Live vs Backtest Hi5e (SGOV boundary)
+
+```
+                    ┌─────────────────────────────┐
+                    │ ExtremeZone multiplier      │
+                    │ 0.5× / 0.5× / 2× / 3×       │
+                    └─────────────┬───────────────┘
+                                  │
+              ┌───────────────────┴───────────────────┐
+              ▼                                       ▼
+     Live engine (engine.rs)              Backtest (backtest.rs)
+     ─────────────────────                ─────────────────────
+     base = cash / M                      base = monthly_contribution
+     budget = base × multiplier           deploy = base × multiplier
+     no SGOV position/ledger              remainder ↔ in-memory sgov_pool
+     settled USD cash only                simulated reservoir unlock on panic
+```
+
+`sgov_pool` exists **only** inside the backtest simulator. Production never buys/sells SGOV or tracks a separate cash reservoir beyond ordinary USD settled cash.
+
+`GET /api/overview` is an **estimated shell** (recent `order_log` + radar zone) until a live portfolio cache is wired; do not treat weights/cash fields as authoritative marks.
+
+### 4.4 Command Execution Modes
 ```bash
 # Full Mode (Cron Daemon + Axum Web API Server)
 HI5BOT_DATA_DIR=./data cargo run

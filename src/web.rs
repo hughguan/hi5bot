@@ -88,9 +88,10 @@ pub fn build_router(state: SharedState) -> Router {
 
 /// GET /api/overview
 ///
-/// Returns current portfolio positions, cash, and SGOV pool balance.
-/// In the current architecture, this data comes from Questrade at tick time;
-/// for the dashboard, we serve the last-known state from the database.
+/// **Estimated shell** until a live portfolio cache exists.
+/// Positions are inferred from recent `order_log` rows (last order per ticker),
+/// not full Questrade marks. `cash_usd` / `sgov_pool` / PnL are placeholders
+/// (`sgov_pool` is backtest-only and always 0.0 here).
 async fn get_overview(State(state): State<SharedState>) -> impl IntoResponse {
     let latest_signal = state.db.latest_market_signal().ok().flatten();
     let recent_orders = state.db.recent_orders(None, 50).unwrap_or_default();

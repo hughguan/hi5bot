@@ -2,7 +2,7 @@
 
 Unattended, mission-critical automation daemon (Rust) that executes a strict,
 mechanical asset-allocation and grid rebalancing strategy on Questrade
-registered accounts (RESP/TFSA). A compile-time state machine translates
+registered accounts (e.g. RESP, TFSA, RRSP). A compile-time state machine translates
 emotional investing rules into deterministic execution, eliminating human bias.
 
 > ⚠️ This software places **real orders** with real money once configured with
@@ -35,6 +35,9 @@ per calendar month**:
 
 Each buy is sized by the **Dynamic Buffer Pool** and allocated **Fill-the-Gap**
 (worst-underweight ticker first, floored to whole shares, never above target).
+The enhanced **Hi5e strategy** scales allocation dynamically based on the **Market Extreme Zone Radar** ($0.5\times$ in Normal/Caution, $2.0\times$ in Panic, $3.0\times$ in ExtremePanic).
+
+> **Live vs backtest:** In production the multiplier applies to the per-tick buffer budget (`USD cash / M`). An **SGOV cash reservoir** is simulated **only in the backtest engine** (`sgov_pool`); the live daemon does not hold or unlock a separate SGOV pool. See `docs/arch.md` §4.3 and `docs/spec.md` §1.2–1.4.
 
 ---
 
@@ -75,18 +78,24 @@ src/
   error.rs        Typed errors (thiserror)
   config.rs       TOML settings + $HI5BOT_DATA_DIR resolution
   auth.rs         OAuth2 token store: atomic rewrite + refresh handshake
+  accounts.rs     Dynamic Questrade account discovery at startup
   buffer_pool.rs  Dynamic Buffer Pool sizing + Fill-the-Gap allocation
   strategy.rs     Calendar-month state machine (5 signals) + market-state compute
   calendar.rs     Third-Friday / last-Aug-trading-day / 15:30 ET wake
   questrade.rs    Async REST client (accounts/balances/positions/quotes/candles/orders)
   state_store.rs  Atomic per-account monthly trade counter
+  fetcher.rs      AAII & NAAIM web sentiment fetcher pipeline
+  radar.rs        Market Extreme Zone Radar classification engine
+  backtest.rs     Hi5 vs Hi5e historical backtest simulator
+  web.rs          Axum REST API server (Port 8080) for dashboard UI
+  db.rs           SQLite database layer (WAL mode, market_signals, order_log, backtest_cache)
   notify.rs       Hard-abort webhook
-  engine.rs       One evaluation tick: auth → data → signal → allocate → safety → order
-  main.rs         Tokio runtime + cron loop (--once / --dry-run)
+  engine.rs       One evaluation tick: auth → discovery → radar → signal → allocate → order
+  main.rs         Tokio runtime + background web server + cron loop (--once / --dry-run / --web-only)
 ```
 
 The data directory (`$HI5BOT_DATA_DIR`, default `./data`) holds `config.toml`,
-`tokens.json`, and `state.json` — one volume to mount in a container.
+`tokens.json`, `hi5bot.db`, and `state.json` — one volume to mount in a container.
 
 ---
 
@@ -94,7 +103,7 @@ The data directory (`$HI5BOT_DATA_DIR`, default `./data`) holds `config.toml`,
 
 ```sh
 cargo build
-cargo test            # 48 unit + 3 integration tests
+cargo test            # 59 lib + 3 integration tests (62 total)
 cargo test -- --nocapture
 ```
 
@@ -109,10 +118,10 @@ asymmetric or zero balances.
 
 Copy `config/hi5bot.example.toml` to `data/config.toml` and fill in:
 
-- `resp_account`, `tfsa_account` — Questrade account numbers.
+- `account_types` — Whitelist of active Questrade account kinds (e.g. `["RESP", "TFSA", "RRSP", "Margin"]`). Accounts are dynamically discovered at startup.
 - `[symbol_ids]` — Questrade symbol IDs for the 5 ETFs (lookup once via
-  `v1/symbols/search?q=<TICKER>`; they differ between practice and prod).
-- `vix_symbol_id` — VIX index symbol ID (for the ExtremePanic signal).
+  `v1/symbols/search?q=<TICKER>`).
+- `vix_symbol_id` — VIX index symbol ID (for ExtremePanic signal).
 - `safety_buffer_m` — `M` in `Available_Per_Trade = USD_Cash / M` (default 10).
 - `settlement_pref` — must stay `"Currency of Transaction"` (hard-lock).
 - `token_url`, `eval_time`, `notify_webhook`.

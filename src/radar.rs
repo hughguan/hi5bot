@@ -5,8 +5,8 @@
 //!
 //! | Zone           | Description                    | Action                          |
 //! |----------------|--------------------------------|---------------------------------|
-//! | `Normal`       | No stress detected             | Base allocation only (Hi5)      |
-//! | `Caution`      | One pillar flashing            | Moderate cash reserve           |
+//! | `Normal`       | No stress detected             | 0.5× base allocation (Hi5)      |
+//! | `Caution`      | One pillar flashing            | 0.5× base allocation (Hi5)      |
 //! | `Panic`        | Two pillars in extreme zone    | Deploy 2× buffer pool cash      |
 //! | `ExtremePanic` | All three pillars extreme      | Deploy 3× buffer pool cash      |
 //!
@@ -49,7 +49,7 @@ impl ExtremeZone {
             ExtremeZone::Normal => "NORMAL",
             ExtremeZone::Caution => "CAUTION",
             ExtremeZone::Panic => "PANIC",
-            ExtremeZone::ExtremePanic => "EXTREME_BUY_NOW",
+            ExtremeZone::ExtremePanic => "EXTREME_PANIC",
         }
     }
 

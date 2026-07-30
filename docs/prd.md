@@ -39,12 +39,12 @@ The radar continuously monitors market sentiment and market structure to classif
 * **Pillar 2 (NAAIM Exposure)**: NAAIM Exposure Index $\le 40\%$.
 * **Pillar 3 (Market Breadth)**: S&P 500 % of stocks above 200-day Moving Average $\le 30\%$.
 * **Dynamic Budget Multiplier**:
-  * `Normal` (0 pillars): $0.5\times$ — deploy 50%, reserve 50% to SGOV buffer.
+  * `Normal` (0 pillars): $0.5\times$ — deploy 50% of base budget.
   * `Caution` (1 pillar): $0.5\times$ — same as Normal (single pillar treated as noise unless VIX ≥ 35).
-  * `Panic` (2 pillars, or 1+VIX≥35): $2.0\times$ — unlock SGOV reservoir.
+  * `Panic` (2 pillars, or 1+VIX≥35): $2.0\times$ — aggressive allocation.
   * `ExtremePanic` (3 pillars + VIX≥35 + RSP≤-3%): $3.0\times$ — maximum aggression.
 
-*Note: The $0.5\times$ multiplier applies to the monthly contribution in the backtest, and to the buffer-pool budget (`cash / M`) in the live engine. This is by design — the multiplier scales the available deployment, not the underlying cash.*
+*Note: SGOV reservoir pool management (`sgov_pool`) is exclusive to the backtest simulator (allocating unspent monthly contribution). The live trading engine applies the dynamic multiplier ($0.5\times \sim 3.0\times$) directly to the per-tick cash buffer budget (`cash / M`), as the live engine manages settled USD cash rather than discrete monthly contributions.*
 
 ### 3.3 Strategy Backtesting Laboratory (Hi5 vs Hi5e)
 * **Interactive Backtest Engine**: Compare benchmark Hi5 (uniform DCA + annual rebalance) against Hi5e (dynamic sentiment reservoir unlock).
@@ -58,7 +58,7 @@ The radar continuously monitors market sentiment and market structure to classif
 
 ### 3.4 Web Dashboard & API Server
 Provide a lightweight Axum REST API (Port `8080`) serving data for monitoring and web frontend integration:
-* `/api/overview`: Current asset allocation, portfolio balances, cash pools, PnL.
+* `/api/overview`: Current portfolio positions, estimated market values, and extreme zone status (prices/weights estimated from recent order log until live cache integration).
 * `/api/radar`: Real-time market radar status, pillar metrics, and zone classification.
 * `/api/radar/history`: Historical radar readings by date range.
 * `/api/backtest`: Execute Hi5 vs Hi5e backtest comparison.
