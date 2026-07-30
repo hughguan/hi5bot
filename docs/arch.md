@@ -57,7 +57,7 @@ graph TD
 * **`src/calendar.rs`**: Trading calendar helpers (third Friday, last trading day of August, US holidays).
 * **`src/questrade.rs`**: Async Questrade REST client (accounts, balances, positions, quotes, candles, orders).
 * **`src/state_store.rs`**: Atomic per-account monthly trade counter.
-* **`src/notify.rs`**: Hard-abort webhook notifications.
+* **`src/notify.rs`**: Multi-channel alerts (Generic Webhook + Telegram Bot) for trade executions, extreme radar escalations, and hard-abort circuit breakers.
 * **`src/types.rs`**: Domain types, `Decimal` money newtypes (`UsdCash`, `CadCash`, `UsdPrice`), Questrade DTOs.
 
 ---
@@ -129,10 +129,10 @@ CREATE INDEX IF NOT EXISTS idx_order_log_placed ON order_log(placed_at);
 │  │                                                  │  │
 │  │  ┌────────────────────────────────────────────┐  │  │
 │  │  │ hi5bot-core (Container)                    │  │  │
-│  │  │  - Static Rust Binary (~4MB)               │  │  │
+│  │  │  - Static Rust Binary (~4MB) :8080 (Axum API)│  │  │
+│  │  │  - Next.js Standalone Bundle :3000 (UI)    │  │  │
 │  │  │  - Env: TZ=America/Toronto                 │  │  │
-│  │  │  - Env: HI5BOT_BIND=0.0.0.0:8080          │  │  │
-│  │  │  - Port Mapping: 8080 -> 8080              │  │  │
+│  │  │  - Port Mappings: 8080 & 3000              │  │  │
 │  │  └─────────────────────┬──────────────────────┘  │  │
 │  │                        │ Volume Mounts           │  │
 │  │                        ▼                         │  │

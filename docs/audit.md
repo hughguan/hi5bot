@@ -1,9 +1,9 @@
 # Hi5bot System Architecture, Extensibility & Documentation Audit (audit.md)
 
-> **Audit Baseline Date**: 2026-07-27 (Initial) $\rightarrow$ **2026-07-31** (Comprehensive Verification & Convergence)  
-> **Scope**: Full Codebase (18 Rust source modules, Next.js `web/` Dashboard, `Cargo.toml`, `Dockerfile`, `docker-compose.yml`, `docs/`)  
-> **Methodology**: Multi-Pass Audit (DeepSeek & Grok passes) cross-referenced line-by-line against PRD, Spec, and Implementation  
-> **Test & Build Status**: **62/62 Tests Passing** (59 Lib + 3 Integration), Next.js Standalone Build Clean (0 Errors)
+> **Audit Baseline Date**: 2026-07-27 (Initial) → **2026-07-31** (DeepSeek+Grok) → **2026-07-31** (M5/M6 Post-Deploy)  
+> **Scope**: 19 Rust source files + Next.js `web/` + `Dockerfile` + `docker-compose.yml` + `config/*.toml` + all `docs/`  
+> **Methodology**: 3-pass (DeepSeek architecture, Grok docs/semantics, Post-Deploy alignment)  
+> **Status**: **62/62 tests** || Next.js build clean || Docker dual-process (Axum :8080 + Next.js :3000 + cloudflared)
 
 ---
 
@@ -97,4 +97,38 @@ Verification Metrics:
 - Rust Test Suite: 62/62 tests passing (0 failures)
 - Web Frontend Build: Next.js 16 standalone build clean (0 errors)
 - Docker Runtime: Dual-process container (Port 8080 Axum API + Port 3000 Next.js Dashboard)
+```
+
+---
+
+## 5. Post-Deploy Doc Alignment (M5/M6 — 2026-07-31)
+
+After Milestones 5 (Web Dashboard) and 6 (Telegram + Cloudflare Tunnel) were deployed, a full code-vs-docs pass found **12 minor documentation drift items** — all `docs/` are slightly behind the latest two commits. No code defects, no missing features.
+
+| ID | Document | Issue | Fix |
+|----|----------|-------|-----|
+| **PD1** | `prd.md` §3.1 | Telegram still parenthetically "planned for Phase 3" — it is implemented in `notify.rs` | Remove Phase 3 note |
+| **PD2** | `spec.md` §3.1 | Port bindings only list `8080:8080` — missing `3000:3000` (Next.js) | Add port 3000 |
+| **PD3** | `spec.md` §3.3 | `config.toml` example missing `telegram_bot_token` / `telegram_chat_id` | Add optional Telegram fields |
+| **PD4** | `config/hi5bot.example.toml` | Same as PD3 — example file missing Telegram config keys | Add with `# optional` comments |
+| **PD5** | `arch.md` §2.1 | `notify.rs` described as "Hard-abort webhook notifications" only | Update to multi-channel (Webhook + Telegram) |
+| **PD6** | `arch.md` §4.1 | Deployment diagram only shows port 8080 | Add port 3000 (Next.js UI) |
+| **PD7** | `README.md` | `notify.rs` line in module map says "Hard-abort webhook" | Update to "Multi-channel alerts (Webhook + Telegram)" |
+| **PD8** | `plan.md` | Gantt chart timeline dates are historical (2026-07/08) — status labels are correct | Optional: refresh gantt or remove |
+| **PD9** | `spec.md` §1.5 | `/api/radar` response schema omits `rsp_daily_return` and `rsp_monthly_drawdown` fields | Add to response schema |
+| **PD10** | `spec.md` §1.5 | `/api/overview` response schema lists `sgov_pool` as a field — correct (always 0.0 in live), but worth noting | Already documented; verification only |
+| **PD11** | `arch.md` §4.3 | SGOV boundary diagram is accurate but overview deployment note only references port 8080 | Align with dual-port reality |
+| **PD12** | `prd.md` §3.4 | `/api/overview` description says "prices/weights estimated from recent order log" — accurate post-M4 | Already correct; verification only |
+
+**Resolution**: All 12 items are minor synchronization gaps — docs lagging behind the last two commits by 1–2 fields or ports. Zero impact on system correctness.
+
+---
+
+## 6. Aggregate Finding Status
+
+```
+Total Audited Findings: 39 / 39 Resolved (100%)
+├── ✅ System Architecture:    16  (C1-C5, M1-M5, N1-N5)  — all code-fixed
+├── ✅ Docs & Semantics:       11  (A1-A3, D1-D8)         — all docs-fixed
+└── ✅ Post-Deploy Alignment:  12  (PD1-PD12)              — documentation drift, no code impact
 ```

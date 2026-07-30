@@ -61,7 +61,7 @@ Simulates portfolio execution over daily historical candles for the 5 target ETF
 | Method | Endpoint | Description | Query / Body | Response Schema |
 | :--- | :--- | :--- | :--- | :--- |
 | `GET` | `/api/overview` | **Estimated** portfolio shell (from recent `order_log` until live position cache). Not full Questrade marks. | None | `{ positions (estimated shares/price/value; weights often placeholder 20%), cash_usd: 0.0, sgov_pool: 0.0, total_value, extreme_zone }` |
-| `GET` | `/api/radar` | Current Market Radar status | None | `{ date, zone, pillars, vix, extreme_pillar_count }` |
+| `GET` | `/api/radar` | Current Market Radar status | None | `{ date, zone, pillars, vix, aaii_bulls, aaii_bears, naaim_exposure, sp500_pct_above_200ma, rsp_daily_return, rsp_monthly_drawdown, extreme_pillar_count }` |
 | `GET` | `/api/radar/history` | Historical radar logs | `?start=YYYY-MM-DD&end=YYYY-MM-DD` | `{ count, snapshots[] }` |
 | `POST` | `/api/backtest` | Trigger strategy backtest | `{ start_date, end_date, monthly_contribution?, safety_buffer_m?, data: [BacktestDay] }` | `{ request, hi5: { cagr, max_dd, sharpe, nav }, hi5e: {...}, nav_series }` |
 | `GET` | `/api/backtest/cached` | Retrieve cached backtest | None | `{ cached, result }` |
@@ -113,13 +113,16 @@ cargo test --all-targets
 ## 3. Deployment Specifications
 
 ### 3.1 Docker & Environment Config
-* **Base Container**: Alpine-based multi-stage Docker build with static Rust binary (~4MB).
-* **Port Bindings**: `8080:8080` (HTTP Web API & Dashboard).
+* **Base Container**: Alpine-based multi-stage Docker container with Rust static binary + Next.js web standalone bundle.
+* **Port Bindings**:
+  * `8080:8080` — Axum Web REST API.
+  * `3000:3000` — Next.js Web Dashboard UI.
 * **Environment Variables**:
   * `HI5BOT_DATA_DIR`: Directory path for SQLite storage and token cache (Default: `./data`).
   * `HI5BOT_BIND`: Address binding for Axum server (Default: `0.0.0.0:8080`).
   * `TZ`: Execution timezone lock (Must be `America/Toronto`).
   * `RUST_LOG`: Logging verbosity level (Default: `info`).
+  * `TUNNEL_TOKEN`: Optional Cloudflare Zero-Trust Tunnel Token.
 
 ### 3.2 Command Execution Modes
 ```bash

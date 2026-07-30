@@ -30,7 +30,7 @@ The system runs 24/7 on local NAS/Docker infrastructure, connecting directly to 
 * **Security & Circuit Breakers**:
   * **USD Hard Lock**: Strictly enforce USD settled cash availability; prevent CAD margin/leverage usage.
   * **OAuth Security**: Questrade OAuth2 refresh token rotation with atomic local disk persistence.
-  * **Emergency Notifications**: Immediate alert via webhook on execution failure or execution anomalies. (Telegram/Email planned for Phase 3.)
+  * **Emergency Notifications**: Multi-channel alerts (Generic Webhook + Telegram Bot) via `src/notify.rs` on trade executions, extreme radar escalations, and hard-abort circuit breakers.
 
 ### 3.2 Market Extreme Zone Radar (Hi5e Signal Radar)
 The radar continuously monitors market sentiment and market structure to classify market state into four zones: `Normal`, `Caution`, `Panic`, `ExtremePanic`.

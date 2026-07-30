@@ -40,3 +40,7 @@ eval_time = "15:30"
 # Webhook URL for hard-abort notifications (USD cash exhausted, currency violation).
 # Leave empty to disable (errors still go to logs).
 notify_webhook = ""
+
+# Optional Telegram Bot alerts (trade executions, radar zone changes, hard-aborts)
+# telegram_bot_token = "123456789:ABCdefGHIjklMNOpqrsTUVwxyz"
+# telegram_chat_id = "-100123456789"

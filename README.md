@@ -89,7 +89,7 @@ src/
   backtest.rs     Hi5 vs Hi5e historical backtest simulator
   web.rs          Axum REST API server (Port 8080) for dashboard UI
   db.rs           SQLite database layer (WAL mode, market_signals, order_log, backtest_cache)
-  notify.rs       Hard-abort webhook
+  notify.rs       Multi-channel alerts (Generic Webhook + Telegram Bot)
   engine.rs       One evaluation tick: auth → discovery → radar → signal → allocate → order
   main.rs         Tokio runtime + background web server + cron loop (--once / --dry-run / --web-only)
 ```
